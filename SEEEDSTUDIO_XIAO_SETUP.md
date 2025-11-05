@@ -53,8 +53,8 @@ The CC1101 module should be connected to the ESP32C6 using the following pins:
 #### UART and Programming Connections to ESP32C6
 | Signal | ESP32S3 GPIO | XIAO S3 Pin | Description | Connects To |
 |--------|--------------|-------------|-------------|-------------|
-| TX     | GPIO43       | D6          | Shared UART transmit | C6 GPIO16 (RX) |
-| RX     | GPIO44       | D7          | Shared UART receive | C6 GPIO17 (TX) |
+| TX     | GPIO43       | D6          | Shared UART transmit | C6 GPIO17 (RX) |
+| RX     | GPIO44       | D7          | Shared UART receive | C6 GPIO16 (TX) |
 | PROG   | GPIO4        | D4          | C6 boot mode control | C6 GPIO9 |
 | RESET  | GPIO5        | D5          | C6 reset control | C6 EN pin |
 | 3.3V   | 3V3          | 3V3         | Power supply | C6 3.3V |
@@ -75,8 +75,8 @@ The CC1101 module should be connected to the ESP32C6 using the following pins:
 │   XIAO ESP32S3           │         │   XIAO ESP32C6           │
 │   (Main Controller)      │         │   (Radio Controller)     │
 │                          │         │                          │
-│  GPIO43 (D6/TX) ─────────┼────────►│  GPIO16 (D6/RX)         │  1. UART Data
-│  GPIO44 (D7/RX) ◄────────┼─────────│  GPIO17 (D7/TX)         │  2. UART Data
+│  GPIO43 (D6/TX) ─────────┼────────►│  GPIO17 (D7/RX)         │  1. UART Data
+│  GPIO44 (D7/RX) ◄────────┼─────────│  GPIO16 (D6/TX)         │  2. UART Data
 │  GPIO4  (D4/PROG) ───────┼────────►│  GPIO9  (BOOT)  *       │  3. Boot Control
 │  GPIO5  (D5/RESET) ──────┼────────►│  EN (CHIP_EN)   **      │  4. Reset Control
 │  3.3V ────────────────────┼─────────│  3.3V                   │  5. Power
@@ -111,8 +111,8 @@ Total Connections: 6 wires between S3↔C6, plus CC1101 module wiring
 ### Connection Summary
 
 **Between ESP32S3 and ESP32C6 (6 critical wires):**
-1. TX: S3 GPIO43 → C6 GPIO16
-2. RX: S3 GPIO44 → C6 GPIO17
+1. TX: S3 GPIO43 → C6 GPIO17
+2. RX: S3 GPIO44 ← C6 GPIO16
 3. PROG: S3 GPIO4 → C6 GPIO9
 4. RESET: S3 GPIO5 → C6 EN pin
 5. Power: S3 3.3V → C6 3.3V
