@@ -24,8 +24,11 @@ void uart_printf(const char *format, ...);
 #elif defined(CONFIG_OEPL_HARDWARE_PROFILE_ELECROW_C6)
   #define CONFIG_OEPL_HARDWARE_UART_TX 0
   #define CONFIG_OEPL_HARDWARE_UART_RX 1
+#elif defined(CONFIG_OEPL_HARDWARE_PROFILE_SEEEDSTUDIO_XIAO)
+  #define CONFIG_OEPL_HARDWARE_UART_TX 16
+  #define CONFIG_OEPL_HARDWARE_UART_RX 17
 #elif defined(CONFIG_OEPL_HARDWARE_PROFILE_CUSTOM)
   #if !defined(CONFIG_OEPL_HARDWARE_UART_TX) || !defined(CONFIG_OEPL_HARDWARE_UART_RX)
-    #error "No UART TX / RX pins defined. Please check menuconfig" 
+    #error "No UART TX / RX pins defined. Please check menuconfig"
   #endif
 #endif

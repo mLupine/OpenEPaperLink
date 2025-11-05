@@ -1,0 +1,43 @@
+# Seeedstudio XIAO ESP32C6 Configuration
+# Hardware Profile for XIAO ESP32C6 + CC1101 Module
+#
+# This configuration is optimized for the Seeedstudio XIAO ESP32C6 board
+# with a CC1101 sub-GHz radio module for the "spaghetti AP" setup.
+#
+# Pin Mapping:
+# CC1101 SCK   -> GPIO19 (D8, hardware SPI SCK)
+# CC1101 MISO  -> GPIO20 (D9, hardware SPI MISO)
+# CC1101 MOSI  -> GPIO18 (D10, hardware SPI MOSI)
+# CC1101 CSN   -> GPIO21 (D3, SPI CS)
+# CC1101 GDO0  -> GPIO22 (D4, interrupt capable)
+# CC1101 GDO2  -> GPIO23 (D5, interrupt capable)
+#
+# UART to ESP32S3:
+# UART TX -> GPIO16 (D6, hardware UART TX)
+# UART RX -> GPIO17 (D7, hardware UART RX)
+#
+
+# Base Configuration
+CONFIG_IDF_TARGET="esp32c6"
+CONFIG_ESPTOOLPY_FLASHMODE_QIO=y
+CONFIG_ESPTOOLPY_FLASHSIZE_4MB=y
+CONFIG_ESPTOOLPY_HEADER_FLASHSIZE_UPDATE=y
+CONFIG_PARTITION_TABLE_CUSTOM=y
+CONFIG_IEEE802154_RX_BUFFER_SIZE=100
+
+# Hardware Profile Selection
+CONFIG_OEPL_HARDWARE_PROFILE_SEEEDSTUDIO_XIAO=y
+
+# SubGhz Support (CC1101)
+CONFIG_OEPL_SUBGIG_SUPPORT=y
+
+# CC1101 GPIO Configuration - Optimized for XIAO ESP32C6
+CONFIG_MISO_GPIO=20
+CONFIG_SCK_GPIO=19
+CONFIG_MOSI_GPIO=18
+CONFIG_CSN_GPIO=21
+CONFIG_GDO0_GPIO=22
+CONFIG_GDO2_GPIO=23
+
+# SPI Host
+CONFIG_SPI2_HOST=y
