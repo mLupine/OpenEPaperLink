@@ -30,19 +30,21 @@ The CC1101 module should be connected to the ESP32C6 using the following pins:
 - The pin mapping uses **hardware SPI** pins for optimal performance
 - GDO0 and GDO2 are interrupt-capable pins
 - Avoids GPIO3 (RF switch) and GPIO14 (antenna config) - these are reserved for WiFi control
-- Leaves GPIO0, 1, 2 free for future expansion or analog inputs
+- GPIO0, 1 are used for UART1 (S3↔C6 communication)
+- Leaves GPIO2 free for future expansion or analog input
 
 #### Connections to ESP32S3
 | Signal | ESP32C6 GPIO | XIAO C6 Pin | Description | Connects To |
 |--------|--------------|-------------|-------------|-------------|
-| TX     | GPIO16       | D6          | UART transmit to S3 | S3 GPIO44 (RX) |
-| RX     | GPIO17       | D7          | UART receive from S3 | S3 GPIO43 (TX) |
+| TX     | GPIO0        | D0          | UART1 transmit to S3 | S3 GPIO44 (RX) |
+| RX     | GPIO1        | D1          | UART1 receive from S3 | S3 GPIO43 (TX) |
 | BOOT   | GPIO9        | GPIO9 pad   | Boot mode control | S3 GPIO4 (PROG) |
 | EN     | CHIP_EN      | EN pad/button | Reset control | S3 GPIO5 (RESET) |
 | 3.3V   | 3V3          | 3V3         | Power input | S3 3.3V |
 | GND    | GND          | GND         | Common ground | S3 GND |
 
 **Critical Notes:**
+- **GPIO0/1** are used for UART1 (inter-processor communication). GPIO16/17 are NOT used because they are UART0 (USB console)
 - **GPIO9** may require soldering to a test pad or castellated hole on the XIAO C6
 - **EN pin** access: If not exposed as a pad, you have two options:
   1. Solder a wire to the EN pin of the ESP32C6 chip directly (advanced)
@@ -53,8 +55,8 @@ The CC1101 module should be connected to the ESP32C6 using the following pins:
 #### UART and Programming Connections to ESP32C6
 | Signal | ESP32S3 GPIO | XIAO S3 Pin | Description | Connects To |
 |--------|--------------|-------------|-------------|-------------|
-| TX     | GPIO43       | D6          | Shared UART transmit | C6 GPIO17 (RX) |
-| RX     | GPIO44       | D7          | Shared UART receive | C6 GPIO16 (TX) |
+| TX     | GPIO43       | D6          | Shared UART transmit | C6 GPIO1 (RX) |
+| RX     | GPIO44       | D7          | Shared UART receive | C6 GPIO0 (TX) |
 | PROG   | GPIO4        | D4          | C6 boot mode control | C6 GPIO9 |
 | RESET  | GPIO5        | D5          | C6 reset control | C6 EN pin |
 | 3.3V   | 3V3          | 3V3         | Power supply | C6 3.3V |
@@ -75,9 +77,9 @@ The CC1101 module should be connected to the ESP32C6 using the following pins:
 │   XIAO ESP32S3           │         │   XIAO ESP32C6           │
 │   (Main Controller)      │         │   (Radio Controller)     │
 │                          │         │                          │
-│  GPIO43 (D6/TX) ─────────┼────────►│  GPIO17 (D7/RX)         │  1. UART Data
-│  GPIO44 (D7/RX) ◄────────┼─────────│  GPIO16 (D6/TX)         │  2. UART Data
-│  GPIO4  (D4/PROG) ───────┼────────►│  GPIO9  (BOOT)  *       │  3. Boot Control
+│  GPIO43 (D6/TX) ─────────┼────────►│  GPIO1 (D1/RX) UART1    │  1. UART Data
+│  GPIO44 (D7/RX) ◄────────┼─────────│  GPIO0 (D0/TX) UART1    │  2. UART Data
+│  GPIO4  (D4/PROG) ───────┼────────►│  GPIO9 (BOOT)   *       │  3. Boot Control
 │  GPIO5  (D5/RESET) ──────┼────────►│  EN (CHIP_EN)   **      │  4. Reset Control
 │  3.3V ────────────────────┼─────────│  3.3V                   │  5. Power
 │  GND ─────────────────────┼─────────│  GND                    │  6. Ground
@@ -111,8 +113,8 @@ Total Connections: 6 wires between S3↔C6, plus CC1101 module wiring
 ### Connection Summary
 
 **Between ESP32S3 and ESP32C6 (6 critical wires):**
-1. TX: S3 GPIO43 → C6 GPIO17
-2. RX: S3 GPIO44 ← C6 GPIO16
+1. TX: S3 GPIO43 → C6 GPIO1 (UART1 RX)
+2. RX: S3 GPIO44 ← C6 GPIO0 (UART1 TX)
 3. PROG: S3 GPIO4 → C6 GPIO9
 4. RESET: S3 GPIO5 → C6 EN pin
 5. Power: S3 3.3V → C6 3.3V
@@ -190,7 +192,7 @@ Total Connections: 6 wires between S3↔C6, plus CC1101 module wiring
   - Boot/strapping pins (GPIO8, GPIO9)
   - RF control (GPIO3, GPIO14)
   - Internal flash (GPIO4-7)
-- **GPIO16, 17**: Hardware UART pins for reliable communication
+- **GPIO0, 1**: UART1 pins for S3↔C6 communication (GPIO16/17 are UART0 and reserved for USB console)
 
 **ESP32S3 Pin Selection Rationale:**
 - **GPIO43, 44**: Hardware UART pins (U0TXD, U0RXD)
@@ -199,13 +201,13 @@ Total Connections: 6 wires between S3↔C6, plus CC1101 module wiring
 ### Pins to Avoid
 
 **On ESP32C6:**
-- GPIO0, 1: Used for ADC/general purpose - kept free
 - GPIO3: RF switch power control - DO NOT USE
 - GPIO4-7: Flash/JTAG - DO NOT USE
-- GPIO8, 9: Strapping pins - DO NOT USE
+- GPIO8, 9: Strapping pins (GPIO9 is used for BOOT control only)
 - GPIO12, 13: USB - DO NOT USE
 - GPIO14: Antenna selection - DO NOT USE
 - GPIO15: Onboard LED
+- GPIO16, 17: UART0 (USB console) - DO NOT USE for inter-processor communication
 
 **On ESP32S3:**
 - GPIO19, 20: USB - DO NOT USE
@@ -272,14 +274,15 @@ If you **cannot access the C6's EN pin** (no exposed pad), you can use manual re
 - Check that GPIO pins match the configuration (GPIO18-23)
 
 ### UART Communication Failure
-**Symptoms:** S3 can't communicate with C6, timeout errors, no response
+**Symptoms:** S3 can't communicate with C6, timeout errors, no response, or C6's debug console output appears on S3
 
 **Solutions:**
-- Verify TX/RX are cross-connected (S3 GPIO43 → C6 GPIO16, S3 GPIO44 ← C6 GPIO17)
+- **Critical:** Verify TX/RX are cross-connected to **UART1** pins: S3 GPIO43 → C6 GPIO1 (RX), S3 GPIO44 ← C6 GPIO0 (TX)
+- **Common mistake:** DO NOT connect to C6 GPIO16/17 - these are UART0 (USB console), not UART1!
 - Check baud rate settings match on both sides (default 115200)
 - Ensure common ground between S3 and C6
 - Verify C6 firmware is running (LED should blink or show activity)
-- Try reflashing C6 firmware
+- Try reflashing C6 firmware with correct sdkconfig
 
 ### Build Errors
 **For C6:**
@@ -306,8 +309,8 @@ If you **cannot access the C6's EN pin** (no exposed pad), you can use manual re
 | CC1101 GDO0 | GPIO5 | GPIO22 | GPIO5 reserved for flash |
 | CC1101 GDO2 | GPIO6 | GPIO23 | GPIO6 reserved for flash |
 | **ESP32C6 - S3 Communication** |
-| UART TX to S3 | GPIO3 | GPIO16 | GPIO3 controls RF switch! |
-| UART RX from S3 | GPIO2 | GPIO17 | Hardware UART, GPIO2 kept free |
+| UART TX to S3 | GPIO3 | GPIO0 | GPIO3 controls RF switch! Must use UART1 (GPIO0/1), not UART0 (GPIO16/17) |
+| UART RX from S3 | GPIO2 | GPIO1 | UART1 pins - GPIO16/17 are USB console |
 | BOOT (GPIO9) | GPIO9 | GPIO9 | Same (required for programming) |
 | **ESP32S3 - C6 Communication** |
 | UART TX to C6 | GPIO17 | GPIO43 | GPIO17 not available on XIAO S3 |

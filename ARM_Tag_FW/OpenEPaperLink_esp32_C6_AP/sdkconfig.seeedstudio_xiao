@@ -13,8 +13,9 @@
 # CC1101 GDO2  -> GPIO23 (D5, interrupt capable)
 #
 # UART to ESP32S3:
-# UART TX -> GPIO16 (D6, hardware UART TX)
-# UART RX -> GPIO17 (D7, hardware UART RX)
+# UART TX -> GPIO0 (D0, UART1 TX)
+# UART RX -> GPIO1 (D1, UART1 RX)
+# Note: GPIO16/17 are reserved for USB console (UART0)
 #
 
 # Base Configuration
