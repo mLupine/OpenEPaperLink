@@ -13,9 +13,13 @@
 # CC1101 GDO2  -> GPIO23 (D5, interrupt capable)
 #
 # UART to ESP32S3:
-# UART TX -> GPIO16 (D6, UART1 TX)
-# UART RX -> GPIO17 (D7, UART1 RX)
-# Note: Console uses USB-Serial/JTAG, freeing GPIO16/17 for UART1
+# UART TX -> GPIO0 (D0, UART1 TX)
+# UART RX -> GPIO1 (D1, UART1 RX)
+#
+# Console Configuration:
+# Console uses default UART0 (GPIO16/17) via USB-CDC hardware
+# UART1 (GPIO0/1) is dedicated to S3 communication
+# This matches the ELECROW_C6 proven working configuration
 #
 
 # Base Configuration
@@ -25,18 +29,6 @@ CONFIG_ESPTOOLPY_FLASHSIZE_4MB=y
 CONFIG_ESPTOOLPY_HEADER_FLASHSIZE_UPDATE=y
 CONFIG_PARTITION_TABLE_CUSTOM=y
 CONFIG_IEEE802154_RX_BUFFER_SIZE=100
-
-# Console Configuration - Use USB-Serial/JTAG instead of UART0
-# This frees GPIO16/17 for UART1 communication with ESP32S3
-CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG=y
-CONFIG_ESP_CONSOLE_SECONDARY_NONE=y
-# Explicitly disable UART console (these are mutually exclusive choices)
-# CONFIG_ESP_CONSOLE_UART_DEFAULT is not set
-# CONFIG_ESP_CONSOLE_UART_CUSTOM is not set
-# CONFIG_ESP_CONSOLE_NONE is not set
-
-# Note: ROM bootloader will still output to UART during boot/reset
-# But application console will be on USB-Serial/JTAG only
 
 # Hardware Profile Selection
 CONFIG_OEPL_HARDWARE_PROFILE_SEEEDSTUDIO_XIAO=y
