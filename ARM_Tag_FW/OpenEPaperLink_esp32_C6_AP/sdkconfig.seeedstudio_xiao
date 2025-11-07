@@ -30,6 +30,13 @@ CONFIG_IEEE802154_RX_BUFFER_SIZE=100
 # This frees GPIO16/17 for UART1 communication with ESP32S3
 CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG=y
 CONFIG_ESP_CONSOLE_SECONDARY_NONE=y
+# Explicitly disable UART console (these are mutually exclusive choices)
+# CONFIG_ESP_CONSOLE_UART_DEFAULT is not set
+# CONFIG_ESP_CONSOLE_UART_CUSTOM is not set
+# CONFIG_ESP_CONSOLE_NONE is not set
+
+# Note: ROM bootloader will still output to UART during boot/reset
+# But application console will be on USB-Serial/JTAG only
 
 # Hardware Profile Selection
 CONFIG_OEPL_HARDWARE_PROFILE_SEEEDSTUDIO_XIAO=y
