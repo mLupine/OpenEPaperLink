@@ -88,6 +88,7 @@ static void uart_event_task(void *pvParameters) {
             switch (event.type) {
                 case UART_DATA:
                     uart_read_bytes(1, dtmp, event.size, portMAX_DELAY);
+                    ESP_LOGI(TAG, "UART RX: %d bytes", event.size); // DEBUG: log received data
                     for (int i = 0; i < event.size; i++) {
                         buff_pos[curr_buff_pos] = dtmp[i];
                         curr_buff_pos++;
