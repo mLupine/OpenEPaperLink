@@ -536,8 +536,11 @@ function updatecards() {
 		if (tagDB[tagmac].batteryMv < 2400 && tagDB[tagmac].batteryMv != 0 && tagDB[tagmac].batteryMv != 1337) lowbattcount++;
 		if (item.dataset.lastseen && item.dataset.lastseen > (Date.now() / 1000) - servertimediff - 30 * 24 * 3600 * 60) {
 			let idletime = (Date.now() / 1000) - servertimediff - item.dataset.lastseen;
-			$('#tag' + tagmac + ' .lastseen').innerHTML = "<span>last seen</span>" + displayTime(Math.floor(idletime)) + " ago";	
-			if ((Date.now() / 1000) - servertimediff - apConfig.maxsleep * 60 - 300 > item.dataset.nextcheckin) {
+			$('#tag' + tagmac + ' .lastseen').innerHTML = "<span>last seen</span>" + displayTime(Math.floor(idletime)) + " ago";
+			// Handle negative maxsleep values as sub-minute intervals (e.g., -6=5s, -5=10s, -4=15s, -3=20s, -2=30s)
+			let maxSleepSeconds = apConfig.maxsleep >= 0 ? apConfig.maxsleep * 60 :
+				(Math.abs(apConfig.maxsleep) <= 6 ? [0, 0, 30, 20, 15, 10, 5][Math.abs(apConfig.maxsleep)] : 40);
+			if ((Date.now() / 1000) - servertimediff - maxSleepSeconds - 300 > item.dataset.nextcheckin) {
 				item.querySelector('.warningicon').style.display = 'inline-block';
 				item.classList.remove("tagpending");
 				item.classList.add('state-timeout');

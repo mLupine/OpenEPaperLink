@@ -72,9 +72,29 @@ void contentRunner() {
         }
 
         if (taginfo->expectedNextCheckin > now - 10 && taginfo->expectedNextCheckin < now + 30 && taginfo->pendingIdle == 0 && taginfo->pendingCount == 0 && !isAp) {
-            int32_t minutesUntilNextUpdate = (taginfo->nextupdate - now) / 60;
-            if (minutesUntilNextUpdate > config.maxsleep) {
-                minutesUntilNextUpdate = config.maxsleep;
+            int32_t secondsUntilNextUpdate = taginfo->nextupdate - now;
+            int32_t minutesUntilNextUpdate;
+
+            // Handle negative maxsleep values as sub-minute intervals (e.g., -6=5s, -5=10s, -4=15s, -3=20s, -2=30s)
+            if (config.maxsleep < 0) {
+                // Map negative values to seconds: -6=5s, -5=10s, -4=15s, -3=20s, -2=30s
+                int secondsMap[] = {0, 0, 30, 20, 15, 10, 5};  // Index by abs(maxsleep)
+                int maxSleepSeconds = (abs(config.maxsleep) <= 6) ? secondsMap[abs(config.maxsleep)] : 40;
+
+                // Cap the sleep time to the configured sub-minute interval
+                if (secondsUntilNextUpdate > maxSleepSeconds) {
+                    secondsUntilNextUpdate = maxSleepSeconds;
+                }
+
+                // Convert to minutes for compatibility with existing logic
+                // Use fractional representation: store seconds directly when < 60
+                minutesUntilNextUpdate = (secondsUntilNextUpdate < 60) ? 0 : (secondsUntilNextUpdate / 60);
+            } else {
+                // Normal minute-based logic for positive maxsleep values
+                minutesUntilNextUpdate = secondsUntilNextUpdate / 60;
+                if (minutesUntilNextUpdate > config.maxsleep) {
+                    minutesUntilNextUpdate = config.maxsleep;
+                }
             }
             if (util::isSleeping(config.sleepTime1, config.sleepTime2)) {
                 struct tm timeinfo;
@@ -85,13 +105,19 @@ void contentRunner() {
                 nextSleepTimeinfo.tm_sec = 0;
                 time_t nextWakeTime = mktime(&nextSleepTimeinfo);
                 if (nextWakeTime < now) nextWakeTime += 24 * 3600;
-                minutesUntilNextUpdate = (nextWakeTime - now) / 60 - 2;
+                secondsUntilNextUpdate = nextWakeTime - now - 120;  // -2 minutes safety margin
+                minutesUntilNextUpdate = secondsUntilNextUpdate / 60;
             }
-            if (minutesUntilNextUpdate > 1 && (wsClientCount() == 0 || config.stopsleep == 0)) {
-                taginfo->pendingIdle = minutesUntilNextUpdate * 60;
+
+            // For sub-minute intervals, send idle request even if < 1 minute
+            bool shouldSendIdle = (config.maxsleep < 0 && secondsUntilNextUpdate >= 5) ||
+                                  (config.maxsleep >= 0 && minutesUntilNextUpdate > 1);
+
+            if (shouldSendIdle && (wsClientCount() == 0 || config.stopsleep == 0)) {
+                taginfo->pendingIdle = secondsUntilNextUpdate;
                 taginfo->expectedNextCheckin = now + taginfo->pendingIdle;
                 if (taginfo->isExternal == false) {
-                    prepareIdleReq(taginfo->mac, minutesUntilNextUpdate);
+                    prepareIdleReq(taginfo->mac, (secondsUntilNextUpdate < 60) ? 0 : minutesUntilNextUpdate);
                 }
             }
         }

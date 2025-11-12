@@ -61,7 +61,7 @@ struct Config {
     uint8_t led;
     uint8_t tft;
     uint8_t language;
-    uint8_t maxsleep;
+    int8_t maxsleep;  // Changed to int8_t to support sub-minute intervals (negative values)
     uint8_t stopsleep;
     volatile uint8_t runStatus;
     uint8_t preview;
