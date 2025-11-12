@@ -117,7 +117,15 @@ void contentRunner() {
                 taginfo->pendingIdle = secondsUntilNextUpdate;
                 taginfo->expectedNextCheckin = now + taginfo->pendingIdle;
                 if (taginfo->isExternal == false) {
-                    prepareIdleReq(taginfo->mac, (secondsUntilNextUpdate < 60) ? 0 : minutesUntilNextUpdate);
+                    // For sub-minute intervals: set bit 15 (0x8000) to indicate seconds
+                    // For minute-based intervals: send minutes as normal
+                    uint16_t nextCheckInValue;
+                    if (secondsUntilNextUpdate < 60) {
+                        nextCheckInValue = 0x8000 | secondsUntilNextUpdate;  // Set bit 15 for seconds mode
+                    } else {
+                        nextCheckInValue = minutesUntilNextUpdate;  // Normal minutes mode
+                    }
+                    prepareIdleReq(taginfo->mac, nextCheckInValue);
                 }
             }
         }

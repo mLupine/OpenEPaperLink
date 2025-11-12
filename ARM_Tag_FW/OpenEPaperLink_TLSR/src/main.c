@@ -211,16 +211,27 @@ int main(void)
 				currentChannel = 0;
 			}
 
-			doSleep(40 * 1000UL);
-			/*// if the AP told us to sleep for a specific period, do so.
+			// If the AP told us to sleep for a specific period, do so.
 			if (nextCheckInFromAP)
 			{
-				doSleep(nextCheckInFromAP * 60000UL);
+				// Check if bit 15 is set (0x8000) - indicates seconds instead of minutes
+				if (nextCheckInFromAP & 0x8000)
+				{
+					// Lower 15 bits contain the number of seconds
+					uint16_t sleepSeconds = nextCheckInFromAP & 0x7FFF;
+					doSleep(sleepSeconds * 1000UL);
+				}
+				else
+				{
+					// Standard behavior: value is in minutes
+					doSleep(nextCheckInFromAP * 60000UL);
+				}
 			}
 			else
 			{
+				// No directive from AP, use the power-saving algorithm
 				doSleep(getNextSleep() * 1000UL);
-			}*/
+			}
 		}
 		else
 		{

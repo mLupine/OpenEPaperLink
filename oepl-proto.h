@@ -103,7 +103,7 @@ struct AvailDataInfo {
     uint32_t dataSize;
     uint8_t dataType;
     uint8_t dataTypeArgument;  // extra specification or instruction for the tag (LUT to be used for drawing image)
-    uint16_t nextCheckIn;      // when should the tag check-in again? Measured in minutes
+    uint16_t nextCheckIn;      // when should the tag check-in again? If bit 15 is set: seconds (lower 15 bits), otherwise: minutes
 } __packed;
 
 struct pendingData {
