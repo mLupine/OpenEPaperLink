@@ -873,6 +873,7 @@ document.addEventListener("loadTab", function (event) {
 						$("#apcfgtftbrightness").value = data.tft;
 						$("#apcfglanguage").value = data.language;
 						$("#apclatency").value = data.maxsleep;
+						updateSleepTimeDisplay(); // Update human-readable display
 						$("#apcpreventsleep").value = data.stopsleep;
 						$("#apcpreview").value = data.preview;
 						$("#apcnightlyreboot").value = data.nightlyreboot;
@@ -2061,3 +2062,53 @@ function showPreview(previewWindow, element) {
 			});
 	}
 }
+
+// Format seconds into human-readable time (e.g., "5 seconds", "5 minutes", "1.5 hours")
+function formatSleepTime(seconds) {
+	if (!seconds || seconds < 5) return "";
+
+	if (seconds < 60) {
+		return `${seconds} second${seconds !== 1 ? 's' : ''}`;
+	} else if (seconds < 3600) {
+		const minutes = Math.floor(seconds / 60);
+		const remainingSeconds = seconds % 60;
+		let result = `${minutes} minute${minutes !== 1 ? 's' : ''}`;
+		if (remainingSeconds > 0) {
+			result += ` ${remainingSeconds} second${remainingSeconds !== 1 ? 's' : ''}`;
+		}
+		return result;
+	} else {
+		const hours = Math.floor(seconds / 3600);
+		const remainingMinutes = Math.floor((seconds % 3600) / 60);
+		let result = `${hours} hour${hours !== 1 ? 's' : ''}`;
+		if (remainingMinutes > 0) {
+			result += ` ${remainingMinutes} minute${remainingMinutes !== 1 ? 's' : ''}`;
+		}
+		return result;
+	}
+}
+
+// Update the human-readable display for sleep time
+function updateSleepTimeDisplay() {
+	const input = $("#apclatency");
+	const display = $("#apclatency-display");
+	if (input && display) {
+		const seconds = parseInt(input.value);
+		if (seconds >= 5 && seconds <= 65535) {
+			display.textContent = `(${formatSleepTime(seconds)})`;
+			input.style.borderColor = "";
+		} else {
+			display.textContent = "(invalid: must be 5-65535)";
+			input.style.borderColor = "red";
+		}
+	}
+}
+
+// Set up event listener for sleep time input
+document.addEventListener('DOMContentLoaded', function() {
+	const input = $("#apclatency");
+	if (input) {
+		input.addEventListener('input', updateSleepTimeDisplay);
+		input.addEventListener('change', updateSleepTimeDisplay);
+	}
+});
