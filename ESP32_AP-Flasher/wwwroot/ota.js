@@ -1,4 +1,4 @@
-var repo = apConfig.repo || 'OpenEPaperLink/OpenEPaperLink';
+var repo = apConfig.repo || 'mLupine/OpenEPaperLink';
 var repoUrl = 'https://api.github.com/repos/' + repo + '/releases';
 
 const $ = document.querySelector.bind(document);
