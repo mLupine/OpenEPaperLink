@@ -225,7 +225,7 @@ idf.py flash
 ```ini
 board_build.f_cpu = 240000000L         # CPU: 240MHz
 board_build.f_flash = 80000000L        # Flash: 80MHz
-build_flags = -O2 -flto                # Optimize + LTO
+build_flags = -O2                      # Optimize (LTO removed - causes linker errors)
 board_build.psram_speed = 80           # PSRAM: 80MHz
 ```
 
@@ -341,21 +341,20 @@ void prepareIdleReq(const uint8_t* dst, uint16_t nextCheckin) {
 - **Purpose**: Main web UI
 - **Structure**:
   - Tab-based interface (taglist, settings, update, etc.)
-  - Dropdown for `maxsleep` (lines 363-374):
+  - Number input for `maxsleep` (line 363):
     ```html
-    <option value="5">5 seconds</option>
-    <option value="10">10 seconds</option>
-    ...
-    <option value="40" selected>40 seconds (default)</option>
-    ...
-    <option value="3600">1 hour</option>
+    <input type="number" id="apclatency" min="5" max="65535" step="1" placeholder="40">
     ```
+  - Human-readable time display shows interpretation (e.g., "300 seconds (5 minutes)")
+  - Input validation: accepts 5-65535 seconds, shows red border if invalid
 
 #### `wwwroot/main.js`
 - **Purpose**: Tag list UI, WebSocket handling
 - **Key Functions**:
   - `updateTaglist()`: Renders tag table
   - `syncDB()`: Fetches tag database via WebSocket
+  - `formatSleepTime(seconds)`: Converts seconds to human-readable format
+  - `updateSleepTimeDisplay()`: Updates display next to sleep input field
   - Timeout detection (line 541): `maxsleep + 300 seconds`
 
 #### `wwwroot/ota.js`
@@ -501,8 +500,9 @@ Binary packets, structure varies by command. Examples:
 ### 1. Change Maximum Sleep Time
 
 **Via Web UI**:
-- Settings tab → "Maximum sleep" dropdown
-- Select duration (5s - 3600s)
+- Settings tab → "Maximum sleep (seconds)" input field
+- Enter any value from 5 to 65535 seconds (5s to 18.2 hours)
+- Human-readable display shows interpretation (e.g., "5 minutes 30 seconds")
 - Click "Save"
 
 **Via Code**:
