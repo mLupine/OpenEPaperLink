@@ -34,3 +34,6 @@ $PROJECT_DIR/
 
 # Jetbrains IDE
 .idea/
+ESP32_AP-Flasher/build/
+ESP32_AP-Flasher/sdkconfig
+binaries/

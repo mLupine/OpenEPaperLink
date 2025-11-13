@@ -276,15 +276,18 @@ uint32_t getTagCount(uint32_t& timeoutcount, uint32_t& lowbattcount) {
     uint32_t tagcount = 0;
     time_t now;
     time(&now);
+    // Calculate timeout threshold: maxsleep (seconds) + 5 minutes safety margin
+    int32_t timeoutThreshold = config.maxsleep + 300;
+
     for (const tagRecord* taginfo : tagDB) {
         if (!taginfo->isExternal) tagcount++;
         const int32_t timeout = now - taginfo->lastseen;
         if (taginfo->expectedNextCheckin < 3600) {
             // not initialised, timeout if not seen last 5 minutes
-            if (timeout > config.maxsleep * 60 + 300) timeoutcount++;
+            if (timeout > timeoutThreshold) timeoutcount++;
         } else if (now - static_cast<time_t>(taginfo->expectedNextCheckin) > 600) {
             // expected checkin is behind, timeout if not seen last 5 minutes
-            if (timeout > config.maxsleep * 60 + 300) timeoutcount++;
+            if (timeout > timeoutThreshold) timeoutcount++;
         }
         if (taginfo->batteryMv < 2400 && taginfo->batteryMv != 0 && taginfo->batteryMv != 1337) lowbattcount++;
     }
@@ -326,7 +329,7 @@ void initAPconfig() {
     config.led = APconfig["led"].is<uint8_t>() ? APconfig["led"] : 255;
     config.tft = APconfig["tft"].is<uint8_t>() ? APconfig["tft"] : 255;
     config.language = APconfig["language"].is<uint8_t>() ? APconfig["language"] : 0;
-    config.maxsleep = APconfig["maxsleep"].is<uint8_t>() ? APconfig["maxsleep"] : 10;
+    config.maxsleep = APconfig["maxsleep"].is<int>() ? APconfig["maxsleep"].as<uint16_t>() : 40;
     config.stopsleep = APconfig["stopsleep"].is<uint8_t>() ? APconfig["stopsleep"] : 1;
     config.preview = APconfig["preview"].is<uint8_t>() ? APconfig["preview"] : 1;
     config.nightlyreboot = APconfig["nightlyreboot"].is<uint8_t>() ? APconfig["nightlyreboot"] : 1;
@@ -342,7 +345,7 @@ void initAPconfig() {
     // default wifi power 8.5 dbM
     // see https://github.com/espressif/arduino-esp32/blob/master/libraries/WiFi/src/WiFiGeneric.h#L111
     config.wifiPower = APconfig["wifipower"].is<uint8_t>() ? APconfig["wifipower"] : 34;
-    config.repo = APconfig["repo"].is<String>() ? APconfig["repo"].as<String>() : String("OpenEPaperLink/OpenEPaperLink");
+    config.repo = APconfig["repo"].is<String>() ? APconfig["repo"].as<String>() : String("mLupine/OpenEPaperLink");
     config.env = APconfig["env"].is<String>() ? APconfig["env"].as<String>() : String(STR(BUILD_ENV_NAME));
     if (APconfig["timezone"]) {
         strlcpy(config.timeZone, APconfig["timezone"], sizeof(config.timeZone));

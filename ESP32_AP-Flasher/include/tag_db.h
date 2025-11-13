@@ -61,7 +61,7 @@ struct Config {
     uint8_t led;
     uint8_t tft;
     uint8_t language;
-    uint8_t maxsleep;
+    uint16_t maxsleep;  // Maximum tag sleep time in seconds (0-65535, default 40)
     uint8_t stopsleep;
     volatile uint8_t runStatus;
     uint8_t preview;

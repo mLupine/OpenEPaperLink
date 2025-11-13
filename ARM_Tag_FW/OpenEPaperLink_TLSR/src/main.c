@@ -211,16 +211,16 @@ int main(void)
 				currentChannel = 0;
 			}
 
-			doSleep(40 * 1000UL);
-			/*// if the AP told us to sleep for a specific period, do so.
+			// If the AP told us to sleep for a specific period, do so. Value is in seconds.
 			if (nextCheckInFromAP)
 			{
-				doSleep(nextCheckInFromAP * 60000UL);
+				doSleep(nextCheckInFromAP * 1000UL);
 			}
 			else
 			{
+				// No directive from AP, use the power-saving algorithm
 				doSleep(getNextSleep() * 1000UL);
-			}*/
+			}
 		}
 		else
 		{

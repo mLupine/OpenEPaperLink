@@ -72,10 +72,13 @@ void contentRunner() {
         }
 
         if (taginfo->expectedNextCheckin > now - 10 && taginfo->expectedNextCheckin < now + 30 && taginfo->pendingIdle == 0 && taginfo->pendingCount == 0 && !isAp) {
-            int32_t minutesUntilNextUpdate = (taginfo->nextupdate - now) / 60;
-            if (minutesUntilNextUpdate > config.maxsleep) {
-                minutesUntilNextUpdate = config.maxsleep;
+            int32_t secondsUntilNextUpdate = taginfo->nextupdate - now;
+
+            // Cap sleep time to configured maximum (in seconds)
+            if (secondsUntilNextUpdate > config.maxsleep) {
+                secondsUntilNextUpdate = config.maxsleep;
             }
+
             if (util::isSleeping(config.sleepTime1, config.sleepTime2)) {
                 struct tm timeinfo;
                 getLocalTime(&timeinfo);
@@ -85,13 +88,16 @@ void contentRunner() {
                 nextSleepTimeinfo.tm_sec = 0;
                 time_t nextWakeTime = mktime(&nextSleepTimeinfo);
                 if (nextWakeTime < now) nextWakeTime += 24 * 3600;
-                minutesUntilNextUpdate = (nextWakeTime - now) / 60 - 2;
+                secondsUntilNextUpdate = nextWakeTime - now - 120;  // -2 minutes safety margin
             }
-            if (minutesUntilNextUpdate > 1 && (wsClientCount() == 0 || config.stopsleep == 0)) {
-                taginfo->pendingIdle = minutesUntilNextUpdate * 60;
+
+            // Send idle request if sleep time is reasonable (>= 5 seconds)
+            if (secondsUntilNextUpdate >= 5 && (wsClientCount() == 0 || config.stopsleep == 0)) {
+                taginfo->pendingIdle = secondsUntilNextUpdate;
                 taginfo->expectedNextCheckin = now + taginfo->pendingIdle;
                 if (taginfo->isExternal == false) {
-                    prepareIdleReq(taginfo->mac, minutesUntilNextUpdate);
+                    // Send sleep time in seconds directly
+                    prepareIdleReq(taginfo->mac, secondsUntilNextUpdate);
                 }
             }
         }
@@ -258,6 +264,27 @@ void drawNew(const uint8_t mac[8], tagRecord *&taginfo) {
         interval = secondsUntilNext;
     } else if (interval < 180)
         interval = 60 * 60;
+
+    imageParams.ts_option = config.showtimestamp;
+    if(imageParams.ts_option) {
+       JsonDocument loc;
+       getTemplate(loc, taginfo->contentMode, taginfo->hwType);
+
+       if(loc["ts_option"].is<int>()) {
+       // Overide ts_option if present in template
+          imageParams.ts_option = loc["ts_option"];
+       }
+       else {
+          const JsonArray jsonArray = loc.as<JsonArray>();
+          for (const JsonVariant &elem : jsonArray) {
+             if(elem["ts_option"].is<int>()) {
+             // Overide ts_option if present in template
+                imageParams.ts_option = elem["ts_option"];
+                break;
+             }
+          }
+       }
+    }
 
     switch (taginfo->contentMode) {
         case 0:   // Not configured

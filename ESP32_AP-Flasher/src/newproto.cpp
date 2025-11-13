@@ -79,9 +79,10 @@ void prepareIdleReq(const uint8_t* dst, uint16_t nextCheckin) {
         memcpy(pending.targetMac, dst, 8);
         pending.availdatainfo.dataType = DATATYPE_NOUPDATE;
         pending.availdatainfo.nextCheckIn = nextCheckin;
-        pending.attemptsLeft = 10 + config.maxsleep;
+        // Attempts based on sleep duration: longer sleep = more retry attempts
+        pending.attemptsLeft = 10 + (nextCheckin / 60);  // Base 10 + 1 per minute
 
-        Serial.printf(">SDA %02X%02X%02X%02X%02X%02X%02X%02X sleeping %d minutes\r\n", dst[7], dst[6], dst[5], dst[4], dst[3], dst[2], dst[1], dst[0], nextCheckin);
+        Serial.printf(">SDA %02X%02X%02X%02X%02X%02X%02X%02X sleeping %d seconds\r\n", dst[7], dst[6], dst[5], dst[4], dst[3], dst[2], dst[1], dst[0], nextCheckin);
         sendDataAvail(&pending);
     }
 }
@@ -162,7 +163,10 @@ void prepareDataAvail(uint8_t* data, uint16_t len, uint8_t dataType, const uint8
 }
 
 bool prepareDataAvail(String& filename, uint8_t dataType, uint8_t dataTypeArgument, const uint8_t* dst, uint16_t nextCheckin, bool resend) {
-    if ((nextCheckin & 0x8000) == 0 && nextCheckin > config.maxsleep) nextCheckin = config.maxsleep;
+    // Cap nextCheckin to maxsleep (in seconds)
+    if ((nextCheckin & 0x8000) == 0 && nextCheckin > config.maxsleep) {
+        nextCheckin = config.maxsleep;
+    }
     if ((nextCheckin & 0x8000) == 0 && wsClientCount() && (config.stopsleep == 1)) nextCheckin = 0;
 #ifdef HAS_TFT
     if (filename == "direct") {

@@ -208,7 +208,11 @@ bool WifiManager::connectToWifi(String ssid, String pass, bool savewhensuccessfu
     delay(100);
     WiFi.setHostname(buildHostname(ESP_MAC_WIFI_STA).c_str());
     WiFi.mode(WIFI_STA);
+#ifdef WIFI_NO_SLEEP
+    WiFi.setSleep(WIFI_PS_NONE);  // Disable WiFi power save for better stability
+#else
     WiFi.setSleep(WIFI_PS_MIN_MODEM);
+#endif
 
     terminalLog("Connecting to WiFi...");
     // logLine("Connecting to WiFi...");
