@@ -276,16 +276,8 @@ uint32_t getTagCount(uint32_t& timeoutcount, uint32_t& lowbattcount) {
     uint32_t tagcount = 0;
     time_t now;
     time(&now);
-    // Calculate timeout threshold based on maxsleep setting
-    int32_t timeoutThreshold;
-    if (config.maxsleep < 0) {
-        // Handle negative maxsleep values as sub-minute intervals (e.g., -6=5s, -5=10s, -4=15s, -3=20s, -2=30s)
-        int secondsMap[] = {0, 0, 30, 20, 15, 10, 5};
-        int maxSleepSeconds = (abs(config.maxsleep) <= 6) ? secondsMap[abs(config.maxsleep)] : 40;
-        timeoutThreshold = maxSleepSeconds + 300;
-    } else {
-        timeoutThreshold = config.maxsleep * 60 + 300;
-    }
+    // Calculate timeout threshold: maxsleep (seconds) + 5 minutes safety margin
+    int32_t timeoutThreshold = config.maxsleep + 300;
 
     for (const tagRecord* taginfo : tagDB) {
         if (!taginfo->isExternal) tagcount++;
@@ -337,7 +329,7 @@ void initAPconfig() {
     config.led = APconfig["led"].is<uint8_t>() ? APconfig["led"] : 255;
     config.tft = APconfig["tft"].is<uint8_t>() ? APconfig["tft"] : 255;
     config.language = APconfig["language"].is<uint8_t>() ? APconfig["language"] : 0;
-    config.maxsleep = APconfig["maxsleep"].is<int>() ? APconfig["maxsleep"].as<int8_t>() : 10;
+    config.maxsleep = APconfig["maxsleep"].is<int>() ? APconfig["maxsleep"].as<uint16_t>() : 40;
     config.stopsleep = APconfig["stopsleep"].is<uint8_t>() ? APconfig["stopsleep"] : 1;
     config.preview = APconfig["preview"].is<uint8_t>() ? APconfig["preview"] : 1;
     config.nightlyreboot = APconfig["nightlyreboot"].is<uint8_t>() ? APconfig["nightlyreboot"] : 1;

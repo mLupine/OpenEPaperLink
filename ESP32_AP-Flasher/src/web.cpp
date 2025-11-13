@@ -601,7 +601,7 @@ void init_web() {
             updateLanguageFromConfig();
         }
         if (request->hasParam("maxsleep", true)) {
-            config.maxsleep = static_cast<int8_t>(request->getParam("maxsleep", true)->value().toInt());
+            config.maxsleep = static_cast<uint16_t>(request->getParam("maxsleep", true)->value().toInt());
         }
         if (request->hasParam("stopsleep", true)) {
             config.stopsleep = static_cast<uint8_t>(request->getParam("stopsleep", true)->value().toInt());
