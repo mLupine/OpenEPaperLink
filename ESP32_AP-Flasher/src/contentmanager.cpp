@@ -15,6 +15,7 @@
 #define CONTENT_TAGCFG
 
 #include <Arduino.h>
+#include <WiFi.h>
 #include <ArduinoJson.h>
 #include <HTTPClient.h>
 #include <MD5Builder.h>

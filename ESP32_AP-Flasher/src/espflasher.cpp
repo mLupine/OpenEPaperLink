@@ -2,6 +2,7 @@
 #include <ArduinoJson.h>
 #include <FS.h>
 #include <HTTPClient.h>
+#include <WiFiClient.h>
 #include <esp_loader.h>
 
 #include "esp32_port.h"

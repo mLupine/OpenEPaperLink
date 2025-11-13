@@ -18,7 +18,7 @@ uint8_t WifiManager::apClients = 0;
 uint8_t x_buffer[100];
 uint8_t x_position = 0;
 
-#if defined(ETHERNET_PHY_POWER) && defined(ETHERNET_PHY_MDC) && defined(ETHERNET_PHY_MDIO) && defined(ETHERNET_PHY_TYPE) && defined(ETHERNET_CLK_MODE)
+#ifdef HAS_ETHERNET
 static bool eth_init = false;
 static bool eth_connected = false;
 static bool eth_ip_ok = false;
@@ -53,7 +53,7 @@ void WifiManager::terminalLog(String text) {
 
 void WifiManager::poll() {
 
-#if defined(ETHERNET_PHY_POWER) && defined(ETHERNET_PHY_MDC) && defined(ETHERNET_PHY_MDIO) && defined(ETHERNET_PHY_TYPE) && defined(ETHERNET_CLK_MODE)
+#ifdef HAS_ETHERNET
 
     if (eth_connected) {
         wifiStatus = ETHERNET;
@@ -140,9 +140,27 @@ void WifiManager::poll() {
 }
 
 void WifiManager::initEth() {
-#if defined(ETHERNET_PHY_POWER) && defined(ETHERNET_PHY_MDC) && defined(ETHERNET_PHY_MDIO) && defined(ETHERNET_PHY_TYPE) && defined(ETHERNET_CLK_MODE)
+#ifdef HAS_ETHERNET
     if(!eth_init) {
         eth_init = true;
+
+        #if defined(ETH_PHY_TYPE) && defined(ETH_PHY_CS)
+        // W5500 SPI Ethernet
+        Serial.println("[ETH] Initializing W5500 SPI Ethernet");
+        SPI.begin(ETH_SPI_SCK, ETH_SPI_MISO, ETH_SPI_MOSI);
+        ETH.begin(
+            ETH_PHY_TYPE,        // ETH_PHY_W5500
+            ETH_PHY_ADDR,        // Address (usually 1)
+            ETH_PHY_CS,          // Chip select
+            ETH_PHY_IRQ,         // Interrupt pin
+            ETH_PHY_RST,         // Reset pin
+            SPI                  // SPI instance
+        );
+        Serial.println("[ETH] W5500 initialized");
+
+        #elif defined(ETHERNET_PHY_POWER) && defined(ETHERNET_PHY_MDC)
+        // Legacy RMII PHY Ethernet
+        Serial.println("[ETH] Initializing RMII PHY Ethernet");
         ETH.begin(
             ETH_PHY_ADDR,
             ETHERNET_PHY_POWER,
@@ -150,13 +168,16 @@ void WifiManager::initEth() {
             ETHERNET_PHY_MDIO,
             ETHERNET_PHY_TYPE,
             ETHERNET_CLK_MODE,
-            false);
+            false
+        );
+        Serial.println("[ETH] RMII PHY initialized");
+        #endif
     }
 #endif
 }
 
 bool WifiManager::connectToWifi() {
-#if defined(ETHERNET_PHY_POWER) && defined(ETHERNET_PHY_MDC) && defined(ETHERNET_PHY_MDIO) && defined(ETHERNET_PHY_TYPE) && defined(ETHERNET_CLK_MODE)
+#ifdef HAS_ETHERNET
     if (wifiStatus == ETHERNET || eth_connected)
         return true;
 #endif
@@ -192,7 +213,7 @@ bool WifiManager::connectToWifi() {
 }
 
 bool WifiManager::connectToWifi(String ssid, String pass, bool savewhensuccessfull) {
-#if defined(ETHERNET_PHY_POWER) && defined(ETHERNET_PHY_MDC) && defined(ETHERNET_PHY_MDIO) && defined(ETHERNET_PHY_TYPE) && defined(ETHERNET_CLK_MODE)
+#ifdef HAS_ETHERNET
     if (wifiStatus == ETHERNET)
         return true;
 #endif
@@ -223,7 +244,7 @@ bool WifiManager::connectToWifi(String ssid, String pass, bool savewhensuccessfu
 }
 
 bool WifiManager::waitForConnection() {
-#if defined(ETHERNET_PHY_POWER) && defined(ETHERNET_PHY_MDC) && defined(ETHERNET_PHY_MDIO) && defined(ETHERNET_PHY_TYPE) && defined(ETHERNET_CLK_MODE)
+#ifdef HAS_ETHERNET
     if (wifiStatus == ETHERNET)
         return true;
 #endif
@@ -378,7 +399,7 @@ void WifiManager::WiFiEvent(WiFiEvent_t event) {
             // eventname = "Assigned IP address to client";
             break;
 
-#if defined(ETHERNET_PHY_POWER) && defined(ETHERNET_PHY_MDC) && defined(ETHERNET_PHY_MDIO) && defined(ETHERNET_PHY_TYPE) && defined(ETHERNET_CLK_MODE)
+#ifdef HAS_ETHERNET
 
         case ARDUINO_EVENT_ETH_START:
             eventname = "ETH Started";

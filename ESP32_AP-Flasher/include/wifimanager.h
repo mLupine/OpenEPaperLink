@@ -10,6 +10,8 @@
 #define WIFI_MANAGER_H
 
 #include <WiFi.h>
+#include <WiFiClient.h>
+#include <esp_mac.h>
 
 enum WifiStatus {
     NOINIT,

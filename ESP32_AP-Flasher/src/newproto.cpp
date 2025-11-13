@@ -3,6 +3,7 @@
 #include <Arduino.h>
 #include <FS.h>
 #include <HTTPClient.h>
+#include <WiFiClient.h>
 #include <MD5Builder.h>
 #include <time.h>
 
