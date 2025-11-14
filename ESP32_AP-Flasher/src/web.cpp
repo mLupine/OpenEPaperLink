@@ -206,6 +206,32 @@ void wsSendTaginfo(const uint8_t *mac, uint8_t syncMode) {
     }
 }
 
+void wsSendTagProgress(const uint8_t *mac) {
+    tagRecord* taginfo = tagRecord::findByMAC(mac);
+    if (taginfo && taginfo->transferInProgress) {
+        JsonDocument doc;
+        char macStr[24];
+        sprintf(macStr, "%02X%02X%02X%02X%02X%02X%02X%02X", mac[7], mac[6], mac[5], mac[4], mac[3], mac[2], mac[1], mac[0]);
+
+        uint8_t progress = 0;
+        if (taginfo->transferTotalBytes > 0) {
+            progress = (taginfo->transferBytesReceived * 100) / taginfo->transferTotalBytes;
+        }
+
+        doc["tagProgress"]["mac"] = macStr;
+        doc["tagProgress"]["progress"] = progress;
+        doc["tagProgress"]["bytes"] = taginfo->transferBytesReceived;
+        doc["tagProgress"]["total"] = taginfo->transferTotalBytes;
+        doc["tagProgress"]["type"] = taginfo->transferInProgress;
+
+        String json;
+        serializeJson(doc, json);
+        xSemaphoreTake(wsMutex, portMAX_DELAY);
+        ws.textAll(json);
+        xSemaphoreGive(wsMutex);
+    }
+}
+
 void wsSendAPitem(struct APlist *apitem) {
     JsonDocument doc;
     JsonObject ap = doc["apitem"].to<JsonObject>();
@@ -635,6 +661,9 @@ void init_web() {
         if (request->hasParam("discovery", true)) {
             config.discovery = static_cast<uint8_t>(request->getParam("discovery", true)->value().toInt());
         }
+        if (request->hasParam("networkmode", true)) {
+            config.networkMode = static_cast<uint8_t>(request->getParam("networkmode", true)->value().toInt());
+        }
         if (request->hasParam("showtimestamp", true)) {
             config.showtimestamp = static_cast<uint8_t>(request->getParam("showtimestamp", true)->value().toInt());
         }
@@ -643,6 +672,12 @@ void init_web() {
         }
         if (request->hasParam("env", true)) {
             config.env = request->getParam("env", true)->value();
+        }
+        if (request->hasParam("highvoltagemv", true)) {
+            config.highVoltageMv = static_cast<uint16_t>(request->getParam("highvoltagemv", true)->value().toInt());
+        }
+        if (request->hasParam("highvoltagecheckin", true)) {
+            config.highVoltageCheckin = static_cast<uint16_t>(request->getParam("highvoltagecheckin", true)->value().toInt());
         }
         saveAPconfig();
         setAPchannel();

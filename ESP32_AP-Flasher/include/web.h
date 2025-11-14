@@ -10,6 +10,7 @@ void dotagDBUpload(AsyncWebServerRequest *request, String filename, size_t index
 void wsLog(const String &text);
 void wsErr(const String &text);
 void wsSendTaginfo(const uint8_t *mac, uint8_t syncMode);
+void wsSendTagProgress(const uint8_t *mac);
 void wsSendSysteminfo();
 void wsSendAPitem(struct APlist *apitem);
 void wsSerial(const String &text);

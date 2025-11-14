@@ -58,10 +58,12 @@ void WifiManager::poll() {
     if (eth_connected) {
         wifiStatus = ETHERNET;
         if(!eth_ip_ok && eth_timeout != 0 && millis() - eth_timeout > 2000) {
+            Serial.println("[ETH] Timeout waiting for IP, marking as disconnected");
             eth_timeout = 0;
             eth_connected = false;
         }
     } else if(!eth_connected && wifiStatus == ETHERNET) {
+        Serial.println("[ETH] Ethernet disconnected, switching to WiFi mode");
         wifiStatus = NOINIT;
         _APstarted = false;
         WiFi.mode(WIFI_STA);
@@ -141,12 +143,17 @@ void WifiManager::poll() {
 
 void WifiManager::initEth() {
 #ifdef HAS_ETHERNET
+    if (config.networkMode == NETWORK_MODE_WIFI_ONLY) {
+        Serial.println("[ETH] Ethernet disabled by config (WiFi-only mode)");
+        return;
+    }
+
     if(!eth_init) {
         eth_init = true;
 
         #if defined(ETH_PHY_TYPE) && defined(ETH_PHY_CS)
         // W5500 SPI Ethernet
-        Serial.println("[ETH] Initializing W5500 SPI Ethernet");
+        Serial.printf("[ETH] Initializing W5500 SPI Ethernet (mode=%d)\n", config.networkMode);
         SPI.begin(ETH_SPI_SCK, ETH_SPI_MISO, ETH_SPI_MOSI);
         ETH.begin(
             ETH_PHY_TYPE,        // ETH_PHY_W5500
@@ -178,8 +185,16 @@ void WifiManager::initEth() {
 
 bool WifiManager::connectToWifi() {
 #ifdef HAS_ETHERNET
-    if (wifiStatus == ETHERNET || eth_connected)
+    if (config.networkMode == NETWORK_MODE_ETH_ONLY) {
+        Serial.println("[WIFI] WiFi disabled by config (Ethernet-only mode)");
+        return false;
+    }
+    if (wifiStatus == ETHERNET || eth_connected) {
+        if (config.networkMode == NETWORK_MODE_AUTO) {
+            Serial.println("[WIFI] Skipping WiFi connection (Ethernet is active, Auto mode)");
+        }
         return true;
+    }
 #endif
 
     Preferences preferences;
@@ -214,6 +229,10 @@ bool WifiManager::connectToWifi() {
 
 bool WifiManager::connectToWifi(String ssid, String pass, bool savewhensuccessfull) {
 #ifdef HAS_ETHERNET
+    if (config.networkMode == NETWORK_MODE_ETH_ONLY) {
+        Serial.println("[WIFI] WiFi disabled by config (Ethernet-only mode)");
+        return false;
+    }
     if (wifiStatus == ETHERNET)
         return true;
 #endif
@@ -274,6 +293,7 @@ bool WifiManager::waitForConnection() {
     WiFi.persistent(true);
     IPAddress IP = WiFi.localIP();
     terminalLog("Connected!");
+    init_udp();
     // logLine("Connected!");
     _nextReconnectCheck = millis() + _reconnectIntervalCheck;
     wifiStatus = CONNECTED;
@@ -360,7 +380,8 @@ void WifiManager::pollSerial() {
 }
 
 void WifiManager::WiFiEvent(WiFiEvent_t event) {
-    Serial.printf("[WiFi-event %d] ", event);
+    Serial.printf("\n[WiFi-event %d] ", event);
+    Serial.flush();
     String eventname="";
 
     switch (event) {
@@ -403,14 +424,13 @@ void WifiManager::WiFiEvent(WiFiEvent_t event) {
 
         case ARDUINO_EVENT_ETH_START:
             eventname = "ETH Started";
-            //set eth hostname here
             ETH.setHostname(buildHostname(ESP_MAC_ETH).c_str());
             eth_timeout = 0;
             break;
         case ARDUINO_EVENT_ETH_CONNECTED:
-            eventname = "ETH Connected";
+            eventname = "ETH Connected (WiFi disabled)";
             WiFi.mode(WIFI_MODE_NULL);
-            WiFi.disconnect();
+            WiFi.disconnect(true, true);
             eth_connected = true;
             eth_timeout = millis();
             break;
@@ -463,7 +483,7 @@ void WifiManager::WiFiEvent(WiFiEvent_t event) {
 #endif
 
 std::vector<std::string> getLocalUrl() {
-    return {String("http://" + WiFi.localIP().toString()).c_str()};
+    return {String("http://" + wm.localIP().toString()).c_str()};
 }
 
 void onErrorCallback(improv::Error err) {

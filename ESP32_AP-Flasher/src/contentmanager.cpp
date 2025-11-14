@@ -75,9 +75,13 @@ void contentRunner() {
         if (taginfo->expectedNextCheckin > now - 10 && taginfo->expectedNextCheckin < now + 30 && taginfo->pendingIdle == 0 && taginfo->pendingCount == 0 && !isAp) {
             int32_t secondsUntilNextUpdate = taginfo->nextupdate - now;
 
-            // Cap sleep time to configured maximum (in seconds)
-            if (secondsUntilNextUpdate > config.maxsleep) {
-                secondsUntilNextUpdate = config.maxsleep;
+            uint16_t maxSleepTime = config.maxsleep;
+            if (taginfo->batteryMv > config.highVoltageMv && config.highVoltageCheckin > 0) {
+                maxSleepTime = config.highVoltageCheckin;
+            }
+
+            if (secondsUntilNextUpdate > maxSleepTime) {
+                secondsUntilNextUpdate = maxSleepTime;
             }
 
             if (util::isSleeping(config.sleepTime1, config.sleepTime2)) {

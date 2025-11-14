@@ -12,10 +12,14 @@
 #define RUNSTATUS_RUN 2
 #define RUNSTATUS_INIT 3
 
+#define NETWORK_MODE_AUTO 0
+#define NETWORK_MODE_ETH_ONLY 1
+#define NETWORK_MODE_WIFI_ONLY 2
+
 #define NO_SUBGHZ_CHANNEL  255
 class tagRecord {
    public:
-    tagRecord() : mac{0}, version(0), alias(""), lastseen(0), nextupdate(0), contentMode(0), pendingCount(0), md5{0}, expectedNextCheckin(0), modeConfigJson(""), LQI(0), RSSI(0), temperature(0), batteryMv(0), hwType(0), wakeupReason(0), capabilities(0), lastfullupdate(0), isExternal(false), apIp(IPAddress(0, 0, 0, 0)), pendingIdle(0), rotate(0), lut(0), tagSoftwareVersion(0), currentChannel(0), dataType(0), filename(""), data(nullptr), len(0), invert(0), updateCount(0), updateLast(0) {}
+    tagRecord() : mac{0}, version(0), alias(""), lastseen(0), nextupdate(0), contentMode(0), pendingCount(0), md5{0}, expectedNextCheckin(0), modeConfigJson(""), LQI(0), RSSI(0), temperature(0), batteryMv(0), hwType(0), wakeupReason(0), capabilities(0), lastfullupdate(0), isExternal(false), apIp(IPAddress(0, 0, 0, 0)), pendingIdle(0), rotate(0), lut(0), tagSoftwareVersion(0), currentChannel(0), dataType(0), filename(""), data(nullptr), len(0), invert(0), updateCount(0), updateLast(0), transferBytesReceived(0), transferTotalBytes(0), transferBlocksReceived(0), transferInProgress(0) {}
 
     uint8_t mac[8];
     uint8_t version;
@@ -51,6 +55,11 @@ class tagRecord {
     uint8_t* data;
     uint32_t len;
 
+    uint32_t transferBytesReceived;
+    uint32_t transferTotalBytes;
+    uint32_t transferBlocksReceived;
+    uint8_t transferInProgress;
+
     static tagRecord* findByMAC(const uint8_t mac[8]);
 };
 
@@ -73,9 +82,12 @@ struct Config {
     uint8_t sleepTime2;
     uint8_t ble;
     uint8_t discovery;
+    uint8_t networkMode;
     String repo;
     String env;
     uint8_t showtimestamp;
+    uint16_t highVoltageMv;
+    uint16_t highVoltageCheckin;
 };
 
 struct Color {

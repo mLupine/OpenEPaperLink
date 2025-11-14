@@ -20,7 +20,9 @@ extern uint8_t channelList[6];
 extern espSetChannelPower curChannel;
 
 void init_udp() {
+    Serial.println("[UDP] init_udp() called from WiFi event");
     udpsync.init();
+    Serial.println("[UDP] init_udp() completed");
 }
 
 UDPcomm::UDPcomm() {
@@ -32,21 +34,34 @@ UDPcomm::~UDPcomm() {
 }
 
 void UDPcomm::init() {
+    const char* interface = (wm.wifiStatus == ETHERNET) ? "ETHERNET" : "WIFI";
+    Serial.printf("[UDP] Initializing UDP discovery on %s. Mode: %s (config.discovery=%d)\n",
+                  interface, config.discovery == 0 ? "MULTICAST" : "BROADCAST", config.discovery);
+    Serial.printf("[UDP] Local IP: %s\n", wm.localIP().toString().c_str());
+
     if (config.discovery == 0) {
+        Serial.printf("[UDP] Attempting to listen on multicast %s:%d\n", UDPIP.toString().c_str(), UDPPORT);
         if (udp.listenMulticast(UDPIP, UDPPORT)) {
+            Serial.println("[UDP] ✓ Multicast listen succeeded");
             udp.onPacket([this](AsyncUDPPacket packet) {
                 if (packet.remoteIP() != wm.localIP()) {
                     this->processPacket(packet);
                 }
             });
+        } else {
+            Serial.println("[UDP] ✗ Multicast listen FAILED");
         }
     } else {
+        Serial.printf("[UDP] Attempting to listen on broadcast port %d\n", UDPPORT);
         if (udp.listen(UDPPORT)) {
+            Serial.println("[UDP] ✓ Broadcast listen succeeded");
             udp.onPacket([this](AsyncUDPPacket packet) {
                 if (packet.isBroadcast() && packet.remoteIP() != wm.localIP()) {
                     this->processPacket(packet);
                 }
             });
+        } else {
+            Serial.println("[UDP] ✗ Broadcast listen FAILED");
         }
     }
     setAPchannel();
@@ -105,7 +120,9 @@ void UDPcomm::processPacket(AsyncUDPPacket packet) {
             APlist APreply;
             memset(&APreply, 0, sizeof(APlist));
             memcpy(&APreply, &packet.data()[1], std::min(packet.length() - 1, sizeof(APlist)));
-            // remove active channel from list
+            Serial.printf("[UDP] AP discovered: %s (%s) ch:%d tags:%d\n",
+                          ((IPAddress)APreply.src).toString().c_str(), APreply.alias,
+                          APreply.channelId, APreply.tagCount);
             for (int i = 0; i < 6; i++) {
                 if (channelList[i] == APreply.channelId) channelList[i] = 0;
             }

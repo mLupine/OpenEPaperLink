@@ -962,7 +962,6 @@ $('#apcfgsave').onclick = function () {
 	formData.append('sleeptime1', $('#apcnight1').value);
 	formData.append('sleeptime2', $('#apcnight2').value);
 	formData.append('discovery', $('#apcdiscovery').value);
-	formData.append('networkmode', $('#apcnetworkmode').value);
 	formData.append('showtimestamp', $('#apcshowtimestamp').value);
 	formData.append('highvoltagemv', $('#highvoltagemv').value);
 	formData.append('highvoltagecheckin', $('#highvoltagecheckin').value);

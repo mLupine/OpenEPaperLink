@@ -419,6 +419,24 @@ void processBlockRequest(struct espBlockRequest* br) {
     uint32_t len = queueItem->len - (BLOCK_DATA_SIZE * br->blockId);
     if (len > BLOCK_DATA_SIZE) len = BLOCK_DATA_SIZE;
     uint16_t checksum = sendBlock(queueItem->data + (br->blockId * BLOCK_DATA_SIZE), len);
+
+    tagRecord* taginfo = tagRecord::findByMAC(br->src);
+    if (taginfo) {
+        taginfo->transferBlocksReceived = br->blockId;
+        taginfo->transferTotalBytes = queueItem->len;
+        taginfo->transferBytesReceived = (br->blockId + 1) * BLOCK_DATA_SIZE;
+        if (taginfo->transferBytesReceived > queueItem->len) {
+            taginfo->transferBytesReceived = queueItem->len;
+        }
+        uint8_t dataType = queueItem->pendingdata.availdatainfo.dataType;
+        if (dataType == DATATYPE_FW_UPDATE) {
+            taginfo->transferInProgress = 1;
+        } else if (dataType == DATATYPE_IMG_RAW_1BPP || dataType == DATATYPE_IMG_RAW_2BPP) {
+            taginfo->transferInProgress = 2;
+        }
+        wsSendTagProgress(br->src);
+    }
+
     char buffer[150];
     sprintf(buffer, "%02X%02X%02X%02X%02X%02X%02X%02X block request %s block %d, len %d checksum %u\0", br->src[7], br->src[6], br->src[5], br->src[4], br->src[3], br->src[2], br->src[1], br->src[0], queueItem->filename, br->blockId, len, checksum);
     wsLog((String)buffer);
@@ -473,6 +491,10 @@ void processXferComplete(struct espXferComplete* xfc, bool local) {
         taginfo->updateLast = now;
         taginfo->pendingCount = countQueueItem(xfc->src);
         taginfo->wakeupReason = 0;
+        taginfo->transferInProgress = 0;
+        taginfo->transferBytesReceived = 0;
+        taginfo->transferTotalBytes = 0;
+        taginfo->transferBlocksReceived = 0;
         if (taginfo->contentMode == 12 && local == false) {
             if (contentFS->exists(dst_path)) {
                 contentFS->remove(dst_path);

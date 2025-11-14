@@ -1,12 +1,16 @@
 # Seeedstudio XIAO ESP32 Setup Guide
 
-This guide explains how to set up a "spaghetti AP" using Seeedstudio XIAO ESP32S3 and XIAO ESP32C6 boards with a CC1101 sub-GHz radio module.
+This guide explains how to set up a "spaghetti AP" using Seeedstudio XIAO ESP32S3 and XIAO ESP32C6 boards with optional CC1101 sub-GHz radio and W5500 Ethernet modules.
 
 ## Hardware Requirements
 
+### Required Components
 - **Seeedstudio XIAO ESP32S3** - Main controller board
 - **Seeedstudio XIAO ESP32C6** - 802.15.4 radio controller
-- **CC1101 Module** - Sub-GHz radio for extended range
+
+### Optional Components
+- **CC1101 Module** - Sub-GHz radio for extended range (433/868/915 MHz)
+- **W5500 Ethernet Module** - Wired network connectivity with automatic WiFi fallback
 
 ## Pin Mapping
 
@@ -127,7 +131,7 @@ Total Connections: 6 wires between S3↔C6, plus CC1101 module wiring
 
 **Note:** C6 debug console remains on UART0 (GPIO16/17), accessible via USB. S3 side uses GPIO43/44 unchanged.
 
-**Between ESP32C6 and CC1101 (8 wires):**
+**Between ESP32C6 and CC1101 (8 wires - OPTIONAL):**
 7. SPI SCK: C6 GPIO19 → CC1101 SCK
 8. SPI MISO: C6 GPIO20 ← CC1101 MISO
 9. SPI MOSI: C6 GPIO18 → CC1101 MOSI
@@ -136,6 +140,164 @@ Total Connections: 6 wires between S3↔C6, plus CC1101 module wiring
 12. TX FIFO: C6 GPIO23 ← CC1101 GDO2
 13. Power: C6 3.3V → CC1101 VCC
 14. Ground: C6 GND → CC1101 GND
+
+**Between ESP32S3 and W5500 Ethernet (7 wires - OPTIONAL):**
+See dedicated W5500 section below for complete wiring details.
+
+## W5500 Ethernet Module Setup (Optional)
+
+The W5500 Ethernet module provides wired network connectivity with automatic WiFi fallback. This is ideal for reliable, high-performance network connections.
+
+### W5500 Module Features
+- **100Mbps** Ethernet connection via RJ45
+- **Automatic failover**: Seamlessly switches between Ethernet and WiFi
+- **Lower latency**: Wired connection for faster tag updates
+- **Configurable modes**: Auto (Ethernet priority), Ethernet-only, or WiFi-only
+- **Power over Ethernet (PoE)**: Some W5500 modules support PoE
+
+### W5500 Pin Connections to ESP32S3
+
+The W5500 module connects to the ESP32S3 via SPI. These pins are defined in the `ESP32_S3_XIAO_SEEEDSTUDIO_C6_W5500_AP` environment:
+
+| W5500 Pin | ESP32S3 GPIO | XIAO S3 Pin | Function | Notes |
+|-----------|--------------|-------------|----------|-------|
+| SCK       | GPIO7        | D2          | SPI Clock | Hardware SPI |
+| MISO      | GPIO9        | D8          | SPI MISO | Hardware SPI |
+| MOSI      | GPIO8        | D3          | SPI MOSI | Hardware SPI |
+| CS        | GPIO10       | -           | Chip Select | May require soldering to pad |
+| INT       | GPIO3        | D1          | Interrupt | Packet ready signal |
+| RST       | GPIO2        | D0          | Reset | Hardware reset |
+| VCC       | 3.3V or 5V   | 3V3/5V      | Power | Check your module specs |
+| GND       | GND          | GND         | Ground | Common ground |
+
+**Important Notes:**
+- GPIO10 (CS) may require soldering to a castellated pad on the XIAO S3
+- Some W5500 modules require 5V power, others work with 3.3V - check your module
+- The W5500 uses different SPI pins than the C6's CC1101 module
+- INT and RST pins are optional but recommended for better performance
+
+### Network Mode Configuration
+
+The firmware supports three network modes (configurable via web UI):
+
+1. **Auto Mode (Default - Recommended)**
+   - Ethernet has priority when connected
+   - Automatically falls back to WiFi if Ethernet cable is disconnected
+   - Automatically switches back to Ethernet when cable is reconnected
+   - WiFi is disabled when Ethernet is active (reduces interference)
+
+2. **Ethernet Only Mode**
+   - Only uses Ethernet, WiFi is completely disabled
+   - No automatic failover
+   - Use for environments where WiFi is not available or desired
+
+3. **WiFi Only Mode**
+   - Only uses WiFi, Ethernet initialization is skipped
+   - Use when you have W5500 hardware but want to use WiFi
+
+**To configure network mode:**
+1. Open the AP's web interface
+2. Go to Settings tab
+3. Find "Network mode" dropdown
+4. Select desired mode: Auto / Ethernet only / WiFi only
+5. Click Save
+6. Mode persists across reboots
+
+### W5500 Wiring Example
+
+```
+┌──────────────────────────┐         ┌──────────────────────────┐
+│   XIAO ESP32S3           │         │   W5500 Ethernet Module  │
+│   (Main Controller)      │         │                          │
+│                          │         │                          │
+│  GPIO7  (D2/SCK) ────────┼────────►│  SCK                     │
+│  GPIO9  (D8/MISO) ◄──────┼─────────│  MISO                    │
+│  GPIO8  (D3/MOSI) ───────┼────────►│  MOSI                    │
+│  GPIO10 (CS pad) ────────┼────────►│  CS                      │
+│  GPIO3  (D1/INT) ◄───────┼─────────│  INT                     │
+│  GPIO2  (D0/RST) ────────┼────────►│  RST                     │
+│  3.3V or 5V ─────────────┼────────►│  VCC                     │
+│  GND ────────────────────┼────────►│  GND                     │
+│                          │         │                          │
+│                          │         │  [RJ45 Port] ← Ethernet  │
+└──────────────────────────┘         └──────────────────────────┘
+```
+
+### Building Firmware with W5500 Support
+
+Use the dedicated W5500 build environment:
+
+```bash
+cd ESP32_AP-Flasher
+
+# Build with W5500 support
+pio run -e ESP32_S3_XIAO_SEEEDSTUDIO_C6_W5500_AP
+
+# Flash to board
+pio run -e ESP32_S3_XIAO_SEEEDSTUDIO_C6_W5500_AP -t upload
+
+# Upload web interface
+pio run -e ESP32_S3_XIAO_SEEEDSTUDIO_C6_W5500_AP -t uploadfs
+```
+
+### Testing W5500 Connection
+
+After flashing and connecting the W5500:
+
+1. **Connect Ethernet cable** to the W5500 module
+2. **Monitor serial output**:
+   ```bash
+   pio device monitor -b 115200
+   ```
+3. **Look for Ethernet messages**:
+   ```
+   [ETH] Initializing W5500 SPI Ethernet (mode=0)
+   [ETH] W5500 initialized
+   [WiFi-event X] ETH Started
+   [WiFi-event X] ETH Connected (WiFi disabled)
+   [WiFi-event X] ETH MAC: XX:XX:XX:XX:XX:XX, IPv4: 192.168.1.100, FULL_DUPLEX, 100Mbps
+   [UDP] Initializing UDP discovery on ETHERNET
+   ```
+
+4. **Test failover** (if in Auto mode):
+   - Unplug Ethernet cable
+   - Watch AP automatically switch to WiFi:
+     ```
+     [ETH] Ethernet cable disconnected
+     [ETH] Ethernet disconnected, switching to WiFi mode
+     Connected!
+     [UDP] Initializing UDP discovery on WIFI
+     ```
+   - Plug cable back in
+   - Watch AP switch back to Ethernet
+
+### W5500 Troubleshooting
+
+**W5500 Not Detected:**
+- Verify SPI connections (SCK, MISO, MOSI, CS)
+- Check power supply voltage (3.3V or 5V depending on module)
+- Ensure CS (GPIO10) is properly connected (may need soldering)
+- Try measuring continuity with multimeter
+- Check if W5500 module has built-in pull-up resistors on SPI lines
+
+**Ethernet Cable Not Detected:**
+- Verify RJ45 cable is CAT5e or better
+- Try a different Ethernet cable
+- Check link LEDs on W5500 module (should light when cable connected)
+- Verify router/switch port is active
+- Try connecting to a different router/switch port
+
+**No IP Address on Ethernet:**
+- Ensure DHCP server is running on your network
+- Check serial logs for DHCP timeout messages
+- Try configuring static IP via web UI (WiFi → Settings)
+- Verify network cable pinout (T568A or T568B standard)
+
+**Cannot Switch from Ethernet to WiFi:**
+- Check "Network mode" setting in web UI (should be "Auto")
+- Ensure WiFi credentials are saved in AP configuration
+- Monitor serial output when unplugging Ethernet cable
+- Try manually setting mode to "WiFi only" to test WiFi connection
 
 ## Building the Firmware
 
@@ -168,25 +330,43 @@ Total Connections: 6 wires between S3↔C6, plus CC1101 module wiring
 
 ### For ESP32S3 (Main Controller)
 
-1. Navigate to the S3 firmware directory:
-   ```bash
-   cd ESP32_AP-Flasher
-   ```
+Choose the appropriate build environment based on your hardware:
 
-2. Build using PlatformIO:
-   ```bash
-   pio run -e ESP32_S3_XIAO_SEEEDSTUDIO_C6_AP
-   ```
+#### Standard Build (WiFi Only)
 
-3. Flash to the board:
-   ```bash
-   pio run -e ESP32_S3_XIAO_SEEEDSTUDIO_C6_AP -t upload
-   ```
+Use this if you don't have a W5500 Ethernet module:
 
-4. Upload filesystem (web interface):
-   ```bash
-   pio run -e ESP32_S3_XIAO_SEEEDSTUDIO_C6_AP -t uploadfs
-   ```
+```bash
+cd ESP32_AP-Flasher
+
+# Build
+pio run -e ESP32_S3_XIAO_SEEEDSTUDIO_C6_AP
+
+# Flash
+pio run -e ESP32_S3_XIAO_SEEEDSTUDIO_C6_AP -t upload
+
+# Upload web interface
+pio run -e ESP32_S3_XIAO_SEEEDSTUDIO_C6_AP -t uploadfs
+```
+
+#### W5500 Ethernet Build
+
+Use this if you have a W5500 Ethernet module connected:
+
+```bash
+cd ESP32_AP-Flasher
+
+# Build with W5500 support
+pio run -e ESP32_S3_XIAO_SEEEDSTUDIO_C6_W5500_AP
+
+# Flash
+pio run -e ESP32_S3_XIAO_SEEEDSTUDIO_C6_W5500_AP -t upload
+
+# Upload web interface
+pio run -e ESP32_S3_XIAO_SEEEDSTUDIO_C6_W5500_AP -t uploadfs
+```
+
+**Note:** The W5500 build includes automatic Ethernet/WiFi failover. If you have W5500 hardware but want WiFi-only operation, flash the W5500 build and set "Network mode" to "WiFi only" in the web UI.
 
 ## Pin Configuration Details
 

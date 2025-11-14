@@ -181,6 +181,12 @@
 						<div class="lastseen"></div>
 						<div class="nextcheckin"></div>
 						<div class="nextupdate"></div>
+						<div class="progresscontainer" style="display:none;">
+							<div class="progressbar">
+								<div class="progressfill"></div>
+							</div>
+							<div class="progresstext"></div>
+						</div>
 						<div class="corner">
 							<div class="waitingicon" title="New content is scheduled to be generated (as soon as possible, or shortly before the next expected checkin time)">&#9203;</div>
 							<div class="pendingicon" title="A new message is waiting for the tag to pick up">&circlearrowright;</div>
@@ -371,6 +377,18 @@ options:
 						<option value="1" selected>yes</option>
 					</select>
 				</p>
+				<p title="Voltage threshold (in millivolts) above which tags use the high voltage checkin interval instead of the maximum sleep time.
+			This is useful for tags with USB power or fresh batteries. Default: 3400mV (3.4V)">
+					<label for="highvoltagemv">High voltage threshold (mV)</label>
+					<input type="number" id="highvoltagemv" min="2000" max="5000" step="100" placeholder="3400" style="width: 100px;">
+					<span style="font-size: 0.9em; color: #888; margin-left: 10px;" id="highvoltagemv-display"></span>
+				</p>
+				<p title="Checkin interval (in seconds) for tags with voltage above the threshold.
+			Use a shorter interval for powered tags to ensure more frequent updates. Default: 2s, Range: 1s to 65535s">
+					<label for="highvoltagecheckin">High voltage checkin interval (seconds)</label>
+					<input type="number" id="highvoltagecheckin" min="1" max="65535" step="1" placeholder="2" style="width: 100px;">
+					<span style="font-size: 0.9em; color: #888; margin-left: 10px;" id="highvoltagecheckin-display"></span>
+				</p>
 				<p
 				   title="Stops updates at night, and put the tags to sleep.
 			During the configured night time, this overrides the maximum sleep time.">
@@ -473,6 +491,14 @@ options:
 					<select id="apcdiscovery">
 						<option value="0" selected>Multicast</option>
 						<option value="1">Broadcast</option>
+					</select>
+				</p>
+				<p title="Configure network mode: Auto (Ethernet priority with WiFi fallback), Ethernet-only, or WiFi-only">
+					<label for="apcnetworkmode">Network mode</label>
+					<select id="apcnetworkmode">
+						<option value="0" selected>Auto (Ethernet + WiFi fallback)</option>
+						<option value="1">Ethernet only</option>
+						<option value="2">WiFi only</option>
 					</select>
 				</p>
 				<p title="Show a timestamp on the screen when the tag is updated">

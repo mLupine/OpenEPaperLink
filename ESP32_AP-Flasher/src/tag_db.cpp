@@ -338,6 +338,7 @@ void initAPconfig() {
     config.sleepTime2 = APconfig["sleeptime2"].is<uint8_t>() ? APconfig["sleeptime2"] : 0;
     config.ble = APconfig["ble"].is<uint8_t>() ? APconfig["ble"] : 0;
     config.discovery = APconfig["discovery"].is<uint8_t>() ? APconfig["discovery"] : 0;
+    config.networkMode = APconfig["networkmode"].is<uint8_t>() ? APconfig["networkmode"] : NETWORK_MODE_AUTO;
     config.showtimestamp = APconfig["showtimestamp"].is<uint8_t>() ? APconfig["showtimestamp"] : 0;
 #ifdef BLE_ONLY
         config.ble = true;
@@ -352,6 +353,8 @@ void initAPconfig() {
     } else {
         strlcpy(config.timeZone, "CET-1CEST,M3.5.0,M10.5.0/3", sizeof(config.timeZone));
     }
+    config.highVoltageMv = APconfig["highvoltagemv"].is<int>() ? APconfig["highvoltagemv"].as<uint16_t>() : 3400;
+    config.highVoltageCheckin = APconfig["highvoltagecheckin"].is<int>() ? APconfig["highvoltagecheckin"].as<uint16_t>() : 2;
 }
 
 void saveAPconfig() {
@@ -377,7 +380,10 @@ void saveAPconfig() {
     APconfig["repo"] = config.repo;
     APconfig["env"] = config.env;
     APconfig["discovery"] = config.discovery;
+    APconfig["networkmode"] = config.networkMode;
     APconfig["showtimestamp"] = config.showtimestamp;
+    APconfig["highvoltagemv"] = config.highVoltageMv;
+    APconfig["highvoltagecheckin"] = config.highVoltageCheckin;
     serializeJsonPretty(APconfig, configFile);
     configFile.close();
     xSemaphoreGive(fsMutex);
